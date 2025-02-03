@@ -75,7 +75,7 @@ Caveats
 
 The project is bound to the SAMD21_ microcontroller because it uses its USB controller with builtin DMA as well as its event system for DMA SPI in order to reliably translate network traffic at fullspeed.
 
-.. _math: ../code_rfm12bp/do3rb.c
+.. _math: code_rfm12bp/do3rb.c
 
 I am aware that the used radio transceiver Si4421 known as RFM12B has reached end-of-life and should be replaced by the more capable and faster Si4463. Good that the math_ is already fast enough and implements run-length limited line coding for 2FSK and 4FSK.
 
