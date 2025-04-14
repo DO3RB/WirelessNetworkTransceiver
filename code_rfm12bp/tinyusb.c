@@ -14,7 +14,7 @@
   #define DRIVER_NAME(_name)  NULL
 #endif
 
-static usbd_class_driver_t const tinyusb_drivers[] =
+usbd_class_driver_t const tinyusb_drivers[] =
 {
   {
 	.name             = DRIVER_NAME("ACM"),
@@ -103,7 +103,7 @@ uint8_t const * tud_descriptor_device_cb(void)
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_CDC_ECM_DESC_LEN)
+#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_CDC_ECM_DESC_LEN)
 
 #define EPNUM_CDC_NOTIF   0x81
 #define EPNUM_CDC_OUT     0x02

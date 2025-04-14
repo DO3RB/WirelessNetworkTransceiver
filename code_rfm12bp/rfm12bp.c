@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "samd21g18a/sam.h"
+#include "samd21g18a/console.h"
 
 #include "circuit.h"
 #include "storage.h"
@@ -28,6 +29,13 @@ void rfm12bp_init(void)
 	circuit_asic_word(RFM_TXC_CMD | RFM_TXC_M(150));
 	circuit_asic_word(RFM_DIV_CMD | RFM_DIV_ONE);
 }
+CONSOLE_RUN(start, rfm12bp_init)
+
+void rfm12bp_reset(void)
+{
+	circuit_asic_word(0xFE00);
+}
+CONSOLE_RUN(reset, rfm12bp_reset)
 
 void rfm12bp_transmit(void)
 {
@@ -50,6 +58,7 @@ void rfm12bp_transmit(void)
 	REG_PORT_OUTCLR1 = CIRCUIT_TXEN;
 	circuit_fifo_byte_yield(0x00);
 }
+CONSOLE_RUN(transmit, rfm12bp_transmit)
 
 void rfm12bp_transmit_on(void)
 {
@@ -89,3 +98,18 @@ void rfm12bp_receive_off(void)
 	circuit_asic_word(RFM_PWR_CMD | RFM_PWR_EBB | RFM_PWR_ES | RFM_PWR_EX | RFM_PWR_DC);
 	REG_PORT_OUTCLR1 = CIRCUIT_RXEN;
 }
+
+#include "samd21g18a/fiber.h"
+#include "channel.h"
+
+void rfm12bp_calibrate(char *value)
+{
+	unsigned int xlc = 0;
+	circuit_asic_word(RFM_PWR_CMD | RFM_PWR_EBB | RFM_PWR_ES | RFM_PWR_EX);
+	sscanf(value, "%d", &xlc);
+	circuit_asic_word(RFM_CFG_CMD | RFM_CFG_EL | RFM_CFG_EF | RFM_CFG_433 | RFM_CFG_X(xlc));
+	printf("%d\r\n", xlc);
+	for (uint8_t m=0; m<FIBER; m++) {if (fiber.funcs[m] == (int(*)(void)) &channel_task) fiber.funcs[m] = 0;}
+	circuit_asic_word(RFM_PWR_CMD | RFM_PWR_EBB | RFM_PWR_ES | RFM_PWR_EX);
+}
+CONSOLE_ARG(xlc, rfm12bp_calibrate)

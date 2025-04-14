@@ -121,3 +121,25 @@ uint8_t storage_flash(void * destin, void * source, size_t length) // nvmcpy
 	free(buf);
 	return 1;
 }
+
+#include "samd21g18a/console.h"
+
+void storage_test_store(void)
+{
+	uint8_t* mem = malloc(256);
+	if (!mem) return;
+	memset(mem, 0x00, 256);
+	scanf("%[^\r]255s", mem); getchar();
+	storage_flash(storage_array, mem, sizeof(storage_array));
+	free(mem);
+	printf("\r\n");
+}
+CONSOLE_RUN(store, storage_test_store)
+
+void storage_test_recall(void)
+{
+	// recall of unwritten store hardfaults
+	// flash probably default 0xFF no string null found
+	printf("%s\r\n", storage_array);
+}
+CONSOLE_RUN(recall, storage_test_recall)

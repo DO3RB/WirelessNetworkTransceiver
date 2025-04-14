@@ -70,7 +70,7 @@ const uint32_t do3rb_reverse[12] = {
 	0b00001001111100010000100000000000,
 };
 
-uint_fast32_t do3rb_golay_decode(uint_fast32_t code)
+uint_fast16_t do3rb_golay_decode(uint_fast32_t code)
 {
 	uint_fast32_t P1D0 = 0, D1P0 = 0; code ^= 0x6E6E6E;
 	#pragma GCC unroll 12
@@ -96,32 +96,75 @@ uint_fast32_t do3rb_golay_decode(uint_fast32_t code)
 }
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "samd21g18a/fiber.h"
+#include "samd21g18a/sam.h"
+#include "samd21g18a/console.h"
 
 uint32_t do3rb_test_permute(uint32_t v)
 {// https://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
 	uint32_t t = v | (v - 1);
 	return (t + 1) | (((~t & -~t) - 1) >> (__builtin_ctz(v) + 1));
 }
-void do3rb_test_exhaustive(void)
+unsigned do3rb_test_exhaustive(void)
 {
-	unsigned int count[5] = {0}, correct[5] = {0}, code, error;
-	for (uint16_t n = 0; n <= 0xFFF; n += 1) {
+	unsigned count[5] = {0}, correct[5] = {0}, code, error;
+	for (unsigned n = 0; n <= 0xFFF; n += 1) {
 		code = do3rb_golay_encode(n);
-		count[0] += 1; if (n == (uint16_t) do3rb_golay_decode(code))       correct[0] += 1;
-	for (error = 0x1; error < (1<<24); error = do3rb_test_permute(error)) {
-		count[1] += 1; if (n == (uint16_t) do3rb_golay_decode(code^error)) correct[1] += 1; }
-	for (error = 0x3; error < (1<<24); error = do3rb_test_permute(error)) {
-		count[2] += 1; if (n == (uint16_t) do3rb_golay_decode(code^error)) correct[2] += 1; }
-	for (error = 0x7; error < (1<<24); error = do3rb_test_permute(error)) {
-		count[3] += 1; if (n == (uint16_t) do3rb_golay_decode(code^error)) correct[3] += 1; }
-	for (error = 0xF; error < (1<<24); error = do3rb_test_permute(error)) {
-		count[4] += 1; if (n == (uint16_t) do3rb_golay_decode(code^error)) correct[4] += 1; }
-	fiber_yield();
+			count[0] += 1; if (n == do3rb_golay_decode(code))       correct[0] += 1;
+		for (error = 0x1; error < (1<<24); error = do3rb_test_permute(error)) {
+			count[1] += 1; if (n == do3rb_golay_decode(code^error)) correct[1] += 1; }
+		for (error = 0x3; error < (1<<24); error = do3rb_test_permute(error)) {
+			count[2] += 1; if (n == do3rb_golay_decode(code^error)) correct[2] += 1; }
+		for (error = 0x7; error < (1<<24); error = do3rb_test_permute(error)) {
+			count[3] += 1; if (n == do3rb_golay_decode(code^error)) correct[3] += 1; }
+		for (error = 0xF; error < (1<<24); error = do3rb_test_permute(error)) {
+			count[4] += 1; if (n == do3rb_golay_decode(code^error)) correct[4] += 1; }
+		fiber_yield();
 	}
-	printf("Errors in 0 bits recovered %3d%% %d\r\n", 100*correct[0]/count[0], count[0]);
+	printf("Errors in 0 bits baseline  %3d%% %d\r\n", 100*correct[0]/count[0], count[0]);
 	printf("Errors in 1 bit  recovered %3d%% %d\r\n", 100*correct[1]/count[1], count[1]);
 	printf("Errors in 2 bits recovered %3d%% %d\r\n", 100*correct[2]/count[2], count[2]);
 	printf("Errors in 3 bits recovered %3d%% %d\r\n", 100*correct[3]/count[3], count[3]);
 	printf("Errors in 4 bits recovered %3d%% %d\r\n", 100*correct[4]/count[4], count[4]);
+	return count[0]+count[1]+count[2]+count[3]+count[4];
 }
+
+void do3rb_test_time(void)
+{
+	uint32_t time = REG_RTC_MODE0_COUNT;
+	unsigned count = do3rb_test_exhaustive();
+	time = REG_RTC_MODE0_COUNT - time;
+	int s = time % 60;
+	int m = time / 60   % 60;
+	int h = time / 3600 % 24;
+	printf("%02d:%02d:%02d runtime %"PRIu32" kb/s\r\n", h, m, s, 24*count/time/1000);
+}
+CONSOLE_RUN(do3rb, do3rb_test_time)
+
+void do3rb_test_popcount(void)
+{
+	uint32_t time = REG_RTC_MODE0_COUNT;
+	unsigned errors = 0;
+	for (unsigned m = 0; m < 1<<24; m++) {
+		if (popcount24(m) != popcount(m)) errors += 1;
+		if (m % 1024) fiber_yield();
+	}
+	time = REG_RTC_MODE0_COUNT - time;
+	int s = time % 60;
+	int m = time / 60   % 60;
+	int h = time / 3600 % 24;
+	printf("%02d:%02d:%02d runtime %d errors\r\n", h, m, s, errors);
+}
+CONSOLE_RUN(popcount, do3rb_test_popcount)
+
+void do3rb_test_cycles(void)
+{
+	volatile uint32_t code = 0;
+	unsigned int time = SysTick->VAL;
+	if (do3rb_synchron_detect(code)) return; // 41 29
+//  code = do3rb_synchron_detect(code);      // 46
+	time = (time - SysTick->VAL) & SysTick_VAL_CURRENT_Msk;
+	printf("%d\r\n", time);
+}
+CONSOLE_RUN(cycles, do3rb_test_cycles)

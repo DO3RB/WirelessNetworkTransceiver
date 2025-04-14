@@ -22,8 +22,8 @@ CPP := $(CHAIN)gcc -E
 CXX := $(CHAIN)g++
 ARFLAGS :=
 ASFLAGS :=
-TARGET_ARCH := -mcpu=cortex-m0plus -mthumb#-mtune=cortex-m0plus.small-multiply
-CFLAGS := -pipe -Wall -Wextra -Wshadow -O2 -flto -ffunction-sections -fdata-sections -fwrapv
+TARGET_ARCH := -mcpu=cortex-m0plus -mthumb#-mfloat-abi=soft -mtune=cortex-m0plus.small-multiply
+CFLAGS := -pipe -Wall -Wextra -O2 -flto -ffunction-sections -fdata-sections -fwrapv
 #CFLAGS += -ffreestanding -fno-tree-loop-distribute-patterns -fno-builtin -fno-builtin-memcpy -nostdlib
 CPPFLAGS = -I $(firstword $(subst /, , $<)) -I. -MMD -MP -I tinyusb -DCFG_TUSB_CONFIG_FILE=\"$(PROJECT)/tinyusb.h\"
 CXXFLAGS := -fno-use-cxa-atexit -fno-exceptions -fno-unwind-tables -fno-rtti
@@ -94,7 +94,7 @@ global: flash remote
 size: $(BUILD)/main.elf
 	echo -e "\033[1m$(SZE)\033[0m"
 	$(SZE) -A "$<" | awk '/^section*/{n=1} { if(n>1) $$3=sprintf("0x%08X",$$3) } \
-	{ if(n) {printf("%-10s %5s %s\n",$$1,$$2,$$3); n++ }} /^.heap*/{n=0}'
+	{ if(n) {printf("%-10s %5s %s\n",$$1,$$2,$$3); n++ }} /^.stack*/{n=0}'
 
 dbg: $(BUILD)/main.debug.elf
 	$(DMP) -SCw --visualize-jumps=color --disassembler-color=extended --no-show-raw-insn $< | less -RS
@@ -116,6 +116,21 @@ usb:
 tinyusb-upstream:
 	$(eval TNY := $(shell mktemp -d))
 	git clone --depth 1 https://github.com/hathach/tinyusb.git $(TNY)
+	rm -rf ./tinyusb/*
+	mkdir -p ./tinyusb/portable/microchip/
+	cp -r $(TNY)/src/portable/microchip/samd ./tinyusb/portable/microchip/
+	cp -r $(TNY)/src/class ./tinyusb/class
+	cp -r $(TNY)/src/common ./tinyusb/common
+	cp -r $(TNY)/src/device ./tinyusb/device
+	cp -r $(TNY)/src/osal ./tinyusb/osal
+	cp $(TNY)/src/tusb_option.h $(TNY)/src/tusb.h $(TNY)/src/tusb.c ./tinyusb/
+	rm -rf $(TNY)
+	awk -i inplace '/[\s]*#include/{gsub(/sam.h/,"$(MCU)/sam.h")}{print}' tinyusb/portable/microchip/samd/dcd_samd.c
+
+tinyusb-latesttag:
+	$(eval TNY := $(shell mktemp -d))
+	$(eval TAG := $(shell git ls-remote --tags --sort='v:refname' https://github.com/hathach/tinyusb.git | tail --lines=1 | cut --delimiter='/' --fields=3))
+	git clone --branch $(TAG) --single-branch --depth 1 https://github.com/hathach/tinyusb.git $(TNY)
 	rm -rf ./tinyusb/*
 	mkdir -p ./tinyusb/portable/microchip/
 	cp -r $(TNY)/src/portable/microchip/samd ./tinyusb/portable/microchip/

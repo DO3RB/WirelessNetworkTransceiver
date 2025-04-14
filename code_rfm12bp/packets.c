@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "samd21g18a/fiber.h"
+#include "samd21g18a/console.h"
 
 #define PACKETS_COUNT 8
 #define PACKETS_ALLOC 6
@@ -48,6 +49,7 @@ void packets_print(void)
 	for (uint8_t n = 0; n < PACKETS_COUNT; n++)
 		printf("%p\r\n", packets_ring[n]);
 }
+CONSOLE_RUN(packets, packets_print)
 
 const uint8_t packets_type[] = {
 	IP_PN_INT,

@@ -5,10 +5,10 @@ OUTPUT_ARCH(arm)
 SEARCH_DIR(.)
 
 PHDRS {
-	text PT_LOAD FLAGS(5);
-	stck PT_LOAD FLAGS(6);
-	data PT_LOAD FLAGS(6);
-	exec PT_LOAD FLAGS(5);
+	TEXT PT_LOAD FLAGS(5);
+	STCK PT_LOAD FLAGS(6);
+	DATA PT_LOAD FLAGS(6);
+	EXEC PT_LOAD FLAGS(5);
 }
 
 SIZE_FLASH = 0x40000; /* 256kB */
@@ -18,36 +18,35 @@ SIZE_SRAM  = 0x08000; /*  32kB */
 
 MEMORY
 {
-	boot  (r x) : ORIGIN = 0x00000000,  LENGTH = SIZE_BOOT
-	rom   (r x) : ORIGIN = SIZE_BOOT, LENGTH = SIZE_FLASH-SIZE_BOOT-SIZE_NVM
-	nvm   (r  ) : ORIGIN = SIZE_FLASH-SIZE_NVM, LENGTH = SIZE_NVM
-	ram   (rwx) : ORIGIN = 0x20000000,  LENGTH = SIZE_SRAM
+	LDR (r x) : ORIGIN = 0x00000000, LENGTH = SIZE_BOOT
+	ROM (r x) : ORIGIN = SIZE_BOOT, LENGTH = SIZE_FLASH-SIZE_BOOT-SIZE_NVM
+	NVM (r  ) : ORIGIN = SIZE_FLASH-SIZE_NVM, LENGTH = SIZE_NVM
+	RAM (rwx) : ORIGIN = 0x20000000, LENGTH = SIZE_SRAM
 }
 
 STACK_SIZE = DEFINED(STACK_SIZE) ? STACK_SIZE : DEFINED(__stack_size__) ? __stack_size__ : 0x2400;
 
-ENTRY(handler_reset)
-/*ENTRY(_start) crt0 */
+ENTRY(handler_reset) /* ENTRY(_start) newlib crt0 */
 
 SECTIONS
 {
-	. = ORIGIN(boot);
-
-	.boot ALIGN(4) (READONLY) :
+	.boot ORIGIN(LDR) (READONLY) :
 	{
-		. += LENGTH(boot);
-	} > rom : text
+		. += LENGTH(LDR);
+	} > ROM : TEXT
 
-	. = ORIGIN(rom);
-
-	.text ALIGN(4) (READONLY) :
+	.text ORIGIN(ROM) (READONLY) :
 	{
-		__text_start = .;
 		KEEP(*(.vectors .vectors.*))
-		*(.text .text.* .gnu.linkonce.t.*)
-		*(.glue_7t) *(.glue_7)
-		*(.rodata .rodata* .gnu.linkonce.r.*)
-		*(.ARM.extab* .gnu.linkonce.armextab.*)
+		*(.gnu.linkonce.t.* .text .text.*)
+		*(.gnu.linkonce.r.* .rodata .rodata.*)
+		*(.gnu.linkonce.armextab.* .ARM.extab*)
+		*(.glue_7) *(.glue_7t)
+
+		. = ALIGN(4);
+		__console_start = .;
+		KEEP(*(.console .console.*))
+		__console_end = .;
 
 		/* Support C constructors, and C destructors in both user code
 		   and the C library. This also provides support for C++ code. */
@@ -83,62 +82,57 @@ SECTIONS
 		KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
 		KEEP (*(SORT(.dtors.*)))
 		KEEP (*crtend.o(.dtors))
-	} > rom : text
+	} > ROM : TEXT
 
 	/* .ARM.exidx is sorted, so has to go in its own output section.  */
 	PROVIDE_HIDDEN (__exidx_start = .);
-	.ARM.exidx ALIGN(4) (READONLY) :
+	.ARM.exidx NEXT(4) (READONLY) :
 	{
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} > rom
+	} > ROM : TEXT
 	PROVIDE_HIDDEN (__exidx_end = .);
 
-	__text_end = ALIGN(4);
-
-	. = ORIGIN(nvm);
-	
-	.store ALIGN(4) (NOLOAD) :
+	.store ORIGIN(NVM) (NOLOAD) : ALIGN(4)
 	{
 		*(.store .store.*);
-	} > nvm : text
+	} > NVM : TEXT
 
-	. = ORIGIN(ram);
-
-	.stack ALIGN(8) (NOLOAD) :
+	.data ORIGIN(RAM) : ALIGN(4)
 	{
-		. += STACK_SIZE;
-	} > ram : stck
-	__stack = .;
-
-	.data ALIGN(4) : AT (__text_end)
-	{
-		__data_start = .;
 		*(SORT_BY_ALIGNMENT(.data));
 		*(SORT_BY_ALIGNMENT(.data.*));
-	} > ram : data
+	} > RAM AT > ROM : DATA
 
-	.ramfunc ALIGN(4) (READONLY) : AT (ALIGN(__text_end+SIZEOF(.data),4))
+	.ramfunc NEXT(4) (READONLY) : ALIGN(4)
 	{
 		*(SORT_BY_NAME(.ramfunc));
 		*(SORT_BY_NAME(.ramfunc.*));
-	} > ram : exec
+	} > RAM AT > ROM : EXEC
 
-	__data_end = ALIGN(4);
+	__data_start = ADDR(.data);
+	__data_end = ADDR(.data)+ALIGN(SIZEOF(.data),4)+ALIGN(SIZEOF(.ramfunc),4);
+	__data_text = LOADADDR(.data);
 
-	.bss ALIGN(4) (NOLOAD) :
+	.bss NEXT(4) (NOLOAD) : ALIGN(4)
 	{
 		__bss_start = .;
 		*(SORT_BY_ALIGNMENT(.bss));
 		*(SORT_BY_ALIGNMENT(.bss.*));
 		*(SORT_BY_ALIGNMENT(COMMON));
-	} > ram : data
-	__bss_end = ALIGN(4);
+		__bss_end = ALIGN(4);
+	} > RAM : DATA
 
-	.heap ALIGN(4) (NOLOAD) :
+	.heap NEXT(4) (NOLOAD) : ALIGN(4)
 	{
 		__heap_base = .;
-		. = ORIGIN(ram)+LENGTH(ram);
-	} > ram : data
-	__heap_limit = .;
-	__heap_size = SIZEOF(.heap);
+		. = ORIGIN(RAM)+LENGTH(RAM)-STACK_SIZE;
+		__heap_limit = ALIGN(4);
+		__heap_size = SIZEOF(.heap);
+	} > RAM : DATA
+
+	.stack NEXT(8) (NOLOAD) : ALIGN(8)
+	{
+		. = ORIGIN(RAM)+LENGTH(RAM);
+		__stack = .;
+	} > RAM : STCK
 }

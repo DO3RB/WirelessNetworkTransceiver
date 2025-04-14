@@ -146,6 +146,7 @@ int conduit_count(void) { return (conduit_mark_dma() - conduit_mark_cpu) % CONDU
 #include "circuit.h"
 #include "rfm12bp.h"
 #include <stdio.h>
+#include "samd21g18a/console.h"
 
 void conduit_test(void)
 {
@@ -165,6 +166,7 @@ void conduit_test(void)
 	rfm12bp_receive_off();
 	conduit_close();
 }
+CONSOLE_RUN(conduit, conduit_test)
 
 /*
 void conduit_test(void)

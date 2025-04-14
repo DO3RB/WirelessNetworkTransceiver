@@ -303,6 +303,6 @@ _ssize_t _read_r (struct _reent* impure, int fd, void* buf, size_t count) {
 	(void) impure;
 	(void) fd;
 	int n = 0;
-	if (count > 1) while ((n = acm_read(buf, count)) < 1) fiber_yield();
+	if (count > 0) while ((n = acm_read(buf, count)) < 1) fiber_yield();
 	return n;
 }

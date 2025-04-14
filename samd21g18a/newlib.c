@@ -45,6 +45,9 @@ QUICKREF
 
 #define __OPTIMIZE_SIZE__ 1
 
+#undef __OPTIMIZE_SIZE__
+#undef PREFER_SIZE_OVER_SPEED
+
 __attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns"),always_inline))
 inline void * memcpy (void * __restrict dst0, const void * __restrict src0, size_t len0)
 {
@@ -380,14 +383,14 @@ Supporting OS subroutines required: <<close>>, <<fstat>>, <<isatty>>,
 __attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns")))
 int puts (char const * s) // __builtin_puts
 {
-	write(STDOUT_FILENO, s, strlen(s)-1);
+	write(STDOUT_FILENO, s, strlen(s));
 	write(STDOUT_FILENO, "\n", 1);
 	return 0;
 }
 
 int fputs (const char * __restrict s, FILE * __restrict fp)
 {
-	write(fp->_file, s, strlen(s)-1);
+	write(fp->_file, s, strlen(s));
 	write(fp->_file, "\n", 1);
 	return 0;
 }

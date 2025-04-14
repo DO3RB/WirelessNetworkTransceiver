@@ -32,8 +32,8 @@ crosscorrelation with leading preamble minimal weight difference 11
 bool do3rb_synchron_detect(uint32_t dword);
 
 uint_fast32_t do3rb_golay_encode(uint_fast16_t word);
-uint_fast32_t do3rb_golay_decode(uint_fast32_t code);
+uint_fast16_t do3rb_golay_decode(uint_fast32_t code);
 
-void do3rb_test_exhaustive(void);
+unsigned do3rb_test_exhaustive(void);
 
 #endif // DO3RB_H

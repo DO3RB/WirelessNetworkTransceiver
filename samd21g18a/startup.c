@@ -5,13 +5,12 @@
 #include "sam.h"
 
 /* Linker symbols */
-extern uint32_t __text_start;
-extern uint32_t __text_end;
-extern uint32_t __data_start;
-extern uint32_t __data_end;
-extern uint32_t __bss_start;
-extern uint32_t __bss_end;
-extern uint32_t __stack;
+extern uint32_t __data_text[];
+extern uint32_t __data_start[];
+extern uint32_t __data_end[];
+extern uint32_t __bss_start[];
+extern uint32_t __bss_end[];
+extern uint32_t __stack[];
 
 /* Default empty handler */
 void handler_none(void) { exit(1); }
@@ -52,12 +51,11 @@ void handler_DAC           (void) __attribute__ ((weak, alias("handler_none")));
 void handler_PTC           (void) __attribute__ ((weak, alias("handler_none")));
 void handler_I2S           (void) __attribute__ ((weak, alias("handler_none")));
 
-/* Exception Table */
 __attribute__((used, section(".vectors")))
-const DeviceVectors exception_table = {
+const DeviceVectors handler_vector = {
 
 	/* Configure Initial Stack Pointer, using linker-generated symbols */
-	.pvStack               = &__stack,
+	.pvStack               = __stack,
 	.pfnReset_Handler      = handler_reset,
 	.pfnNMI_Handler        = handler_NMI,
 	.pfnHardFault_Handler  = handler_hardfault,
@@ -110,7 +108,7 @@ __attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns")))
 void handler_reset(void)
 {
 	/* Set the vector table base address */
-	SCB->VTOR = ((uint32_t) &__text_start & SCB_VTOR_TBLOFF_Msk);
+	SCB->VTOR = (uintptr_t) & handler_vector;
 
 	/* MANW default value 0 can lead to spurious writes to NVM (errata 1.11.2) */
 	NVMCTRL->CTRLB.bit.MANW = 1;
@@ -213,19 +211,18 @@ void handler_reset(void)
 	REG_RTC_MODE2_CTRL = RTC_MODE2_CTRL_MODE_COUNT32 | RTC_MODE2_CTRL_PRESCALER_DIV1024 | RTC_MODE2_CTRL_ENABLE;
 
 	/* Relocate the DATA segment and zero the BSS */
-	uint32_t *pSrc = &__text_end;
-	uint32_t *pDest = &__data_start;
-	for (; pDest < &__data_end; *pDest++ = *pSrc++) {}
-	for (pDest = &__bss_start; pDest < &__bss_end; *pDest++ = 0) {}
+	uint32_t *dst, *src = __data_text;
+	dst = __data_start; while (dst < __data_end) *dst++ = *src++;
+	dst = __bss_start;  while (dst < __bss_end)  *dst++ = 0x00000000;
 
-//	memcpy(&__data_start, &__text_end, &__data_end - &__data_start);
-//	memset(&__bss_start, 0x00, &__bss_end - &__bss_start);
+//	memcpy(__data_start, __data_text, (uint8_t*) __data_end - (uint8_t*) __data_start);
+//	memset(__bss_start, 0x00, (uint8_t*) __bss_end - (uint8_t*) __bss_start);
 
-	/* Initialize the C library */
+	/* Initialize newlib C library */
 	void __libc_init_array(void); __libc_init_array();
 
 	/* Change execution context */
-	__set_PSP((uint32_t) &__stack - 1024); // process stack pointer
+	__set_PSP((uint32_t) __stack - 1024); // process stack pointer
 	__set_CONTROL(CONTROL_SPSEL_Msk | CONTROL_nPRIV_Msk); // PROCESS_STACK PROCESS_PRIVILEGED
 
 	/* Branch to main function */
