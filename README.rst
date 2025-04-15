@@ -127,19 +127,31 @@ Timeline with Laudations
 .. _Teensy: https://www.pjrc.com/teensy/
 .. _pitfall: https://forum.pjrc.com/index.php?threads/teensy-3-hard-fault-due-to-sram_l-and-sram_u-boundary.25256/
 .. _still: https://forum.pjrc.com/index.php?threads/a-dangerous-teensy-3-6-quirk.45489/
+.. _bootcore: https://www.pjrc.com/store/ic_mkl02.html
 
-- Learned ARM Cortex by dismantling the Arduino core_ of Teensy_ 3.1 and subsequently grew to distrust frameworks. Found the cause by myself after an unreasonable amount of time, only to learn later that the pitfall_ is still_ open. The bootcore making the SWD port inaccessible, just to keep proprietary blobs, did not help.
+- Learned ARM Cortex by dismantling the Arduino core_ of Teensy_ 3.1 and subsequently grew to distrust frameworks. Found the cause by myself after an unreasonable amount of time, only to learn later that the pitfall_ is still_ open. The proprietary bootcore_ making the SWD port inaccessible, did not help.
 
-.. _NewPacketRadio: https://hackaday.io/project/164092-npr-new-packet-radio
-.. _LoRa: https://www.semtech.com/lora
-.. _`physical layer`: https://media.ccc.de/v/33c3-7945-decoding_the_lora_phy
-.. _Meshtastic: https://meshtastic.org
-
-- NewPacketRadio_ motivated Amateurradio but being uncoded could not keep up with the innovation of LoRa_'s proprietary `physical layer`_ and subsequent applications like Meshtastic_
+..
+  Though i understand the need to combat counterfeits.
 
 .. _HRD70: https://media.ccc.de/v/afu-tm18-1008-hrd70_high_speed_70_cm_daten_transceiver_fuer_hamnet
 
-- HRD70_ using an mcu with integrated transceiver would have been nice
+- HRD70_ using an MCU with integrated transceiver would have been nice
+
+.. _LoRa: https://www.semtech.com/lora
+.. _LoRaWAN: https://www.semtech.com/lora/lorawan-standard
+.. _`physical layer`: https://media.ccc.de/v/33c3-7945-decoding_the_lora_phy
+.. _modulation: https://www.epfl.ch/labs/tcl/wp-content/uploads/2020/02/Reverse_Eng_Report.pdf
+.. _Meshtastic: https://meshtastic.org
+
+- Semtech LoRa_'s proprietary `physical layer`_ implementing coded chirp-spectrum modulation_ brings reliability and range into the ISM world promoting subsequent monetary LoRaWAN_ and communal Meshtastic_ applications
+
+.. _NewPacketRadio: https://hackaday.io/project/164092-npr-new-packet-radio
+.. _NPR-H: https://hackaday.io/project/175907-npr-h-new-packet-radio-modem
+.. _`NPR 3.0`: https://npr.m0ahn.co.uk/
+.. _NPR-VSAT: http://f4hdk.free.fr/NPR_VSAT/
+
+- NewPacketRadio_ implementing TDMA coordinated IP traffic via slightly coded Si4463. Original hardware was continued by `NPR-H`_ and currently `NPR 3.0`_.  Meanwhile the first author changed platform to develop a coded evolution `NPR-VSAT`_ for satellite use
 
 .. _M17: https://m17project.org/
 .. _replacement: https://spec.m17project.org/pdf/M17_spec.pdf
@@ -152,6 +164,15 @@ Timeline with Laudations
 
 - Reticulum_ is a nice encrypted `network stack`_ with signatures instead of addresses which can_ use LoRa but is generally medium agnostic
 
+.. _HAMRAN: https://github.com/oevsv/hamran-tools
+.. _project: https://hamran.oevsv.at/
+.. _RPX-100: https://wiki.oevsv.at/wiki/RPX-100
+.. _WRAN: https://wiki.oevsv.at/wiki/WRAN_IEEE802.22_(Super_WIFI)
+.. _OFDM: https://repositum.tuwien.at/bitstream/20.500.12708/78121/1/Honek%20Marek%20-%202022%20-%20SDR%20OFDM%20frame%20generation%20according%20to%20IEEE%2080222%20OFDMA...pdf
+.. _MAC: https://wiki.oevsv.at/w/nsfr_img_auth.php/4/41/Medium_Access_Control_for_WRAN.pdf
+
+- HAMRAN_ project_ using `RPX-100`_ SBC+SDR for WRAN_ via OFDM_ with MAC_
+
 .. _CATS: https://cats.radio/
 .. _modernisation: https://gitlab.scd31.com/cats/cats-standard
 
@@ -160,7 +181,7 @@ Timeline with Laudations
 .. _SXceiver: https://sxceiver.com
 .. _SX1255: https://www.semtech.com/products/wireless-rf/lora-core/sx1255
 
-- SXceiver_ more flexibility and bandwidth using SX1255_ but missing amplifier
+- SXceiver_ more flexibility and bandwidth using SX1255_ IQ transceiver but missing amplifier
 
 .. _transport: https://github.com/gretel/rns-if-espnow
 
