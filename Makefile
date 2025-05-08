@@ -28,7 +28,7 @@ CFLAGS := -pipe -Wall -Wextra -O2 -flto -ffunction-sections -fdata-sections -fwr
 CPPFLAGS = -I $(firstword $(subst /, , $<)) -I. -MMD -MP -I tinyusb -DCFG_TUSB_CONFIG_FILE=\"$(PROJECT)/tinyusb.h\"
 CXXFLAGS := -fno-use-cxa-atexit -fno-exceptions -fno-unwind-tables -fno-rtti
 LDLIBS := -lm
-LDFLAGS := -specs=nano.specs -T $(LDFILE) -Wl,--gc-sections
+LDFLAGS := -nostartfiles -specs=nano.specs -T $(LDFILE) -Wl,--gc-sections
 #LDLIBS = -L../newlib -lc_nano -lg_nano -lstdc++_nano -lsupc++_nano
 #LDFLAGS = -fuse-linker-plugin -Wl,--exclude-libs,libgcc.a -Wl,--print-memory-usage -u _printf_float -Map=main.map,--cref
 #arm-none-eabi-gcc -I. -I.. -I ../tinyusb -DCFG_TUSB_CONFIG_FILE=\"tinyusb.h\" -E -MMD -MF- -o /dev/null main.c

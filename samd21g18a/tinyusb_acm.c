@@ -5,10 +5,10 @@
 
 // Level where CFG_TUSB_DEBUG must be at least for this driver is logged
 #ifndef CFG_TUD_CDC_LOG_LEVEL
-  #define CFG_TUD_CDC_LOG_LEVEL   CFG_TUD_LOG_LEVEL
+	#define CFG_TUD_CDC_LOG_LEVEL CFG_TUD_LOG_LEVEL
 #endif
 
-#define TU_LOG_DRV(...)   TU_LOG(CFG_TUD_CDC_LOG_LEVEL, __VA_ARGS__)
+#define TU_LOG_DRV(...) TU_LOG(CFG_TUD_CDC_LOG_LEVEL, __VA_ARGS__)
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF

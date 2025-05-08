@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef TINYUSB_ACM_H
 #define TINYUSB_ACM_H
 
@@ -34,6 +36,7 @@ TU_ATTR_WEAK void acm_send_break_cb(uint16_t duration_ms);
 //--------------------------------------------------------------------+
 // INTERNAL USBD-CLASS DRIVER API
 //--------------------------------------------------------------------+
+
 void     acm_init            (void);
 bool     acm_deinit          (void);
 void     acm_reset           (uint8_t rhport);
@@ -42,7 +45,27 @@ bool     acm_control_xfer_cb (uint8_t rhport, uint8_t stage, tusb_control_reques
 bool     acm_xfer_cb         (uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes);
 
 #ifdef __cplusplus
- }
+}
 #endif
+
+//--------------------------------------------------------------------+
+// DEVICE DRIVER
+//--------------------------------------------------------------------+
+
+#if CFG_TUSB_DEBUG >= CFG_TUD_LOG_LEVEL
+	#define DRIVER_NAME(_name) _name
+#else
+	#define DRIVER_NAME(_name) NULL
+#endif
+
+#define TINYUSB_ACM_DRIVER {\
+	.name            = DRIVER_NAME("ACM"),\
+	.init            = acm_init,\
+	.deinit          = acm_deinit,\
+	.reset           = acm_reset,\
+	.open            = acm_open,\
+	.control_xfer_cb = acm_control_xfer_cb,\
+	.xfer_cb         = acm_xfer_cb,\
+	.sof             = NULL}
 
 #endif // TINYUSB_ACM_H

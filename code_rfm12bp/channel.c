@@ -8,6 +8,7 @@
 #include "storage.h"
 
 #include "samd21g18a/fiber.h"
+#include "samd21g18a/tinyusb_ecm.h"
 
 #include <stdio.h>
 

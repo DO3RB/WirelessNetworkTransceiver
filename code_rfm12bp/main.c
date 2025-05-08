@@ -18,7 +18,8 @@
 int main(void)
 {
 	storage_init();
-	tusb_rhport_init(TUD_OPT_RHPORT, &(tusb_rhport_init_t) {
+	tusb_rhport_init(TUD_OPT_RHPORT,
+		& (tusb_rhport_init_t const) {
 		.role = TUSB_ROLE_DEVICE,
 		.speed = TUSB_SPEED_FULL
 	});
@@ -32,7 +33,9 @@ int main(void)
 		tud_task();
 		fiber_yield();
 		fiber_watch();
+		entropy_feed();
 		REG_PORT_OUTTGL0 = PORT_PA17;
+	//	fiber_idle_wfi();
 	}
 	return 0;
 }

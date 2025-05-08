@@ -1,12 +1,12 @@
 #include "tinyusb_ecm.h"
 
-#include "tinyusb/tusb_option.h"
-#include "tinyusb/class/cdc/cdc.h"
 #include "tinyusb/device/usbd.h"
 #include "tinyusb/device/usbd_pvt.h"
 
-#include "samd21g18a/fiber.h"
-#include "packets.h"
+#include "tinyusb/tusb_option.h"
+#include "tinyusb/class/cdc/cdc.h"
+
+#include "fiber.h"
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF
@@ -67,6 +67,14 @@ void ecm_notify_speed(void)
 	if (usbd_edpt_busy(TUD_OPT_RHPORT, ecm_itf.ep_notif)) return;
 	usbd_edpt_xfer(TUD_OPT_RHPORT, ecm_itf.ep_notif, (uint8_t*) &ecm_notify, sizeof(ecm_notify_t));
 }
+
+#include <malloc.h>
+
+uint8_t* network_packets_get(void) { return malloc(CFG_TUD_NET_MTU); }
+void network_packets_put(uint8_t* packet) { return free(packet); }
+
+uint8_t* packets_get(void) __attribute__ ((weak, alias("network_packets_get")));
+void packets_put(uint8_t* packet) __attribute__ ((weak, alias("network_packets_put")));
 
 static uint8_t * ecm_xmit_ptr;
 static int16_t ecm_xmit_len = -1;

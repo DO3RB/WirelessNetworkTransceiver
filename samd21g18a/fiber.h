@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
-#ifndef fiber_h
-#define fiber_h
+#ifndef FIBER_H
+#define FIBER_H
 
 #define FIBER 8
 
@@ -31,4 +31,13 @@ typedef struct {
 
 void fiber_stats(stats_t* store, uint32_t value);
 
-#endif // fiber_h
+void fiber_idle_init();
+void fiber_idle_inhibit();
+void fiber_idle_wfi();
+void fiber_idle_wfe();
+
+uint32_t xoshiro128plusplus (void);
+uint32_t xoshiro128starstar (void);
+void entropy_feed ();
+
+#endif // FIBER_H

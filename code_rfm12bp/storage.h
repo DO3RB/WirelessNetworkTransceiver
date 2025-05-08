@@ -35,5 +35,6 @@ uint8_t storage_xlc(void);
 #define STORE __attribute__((section(".store")))
 extern uint8_t storage_array[256];
 uint8_t storage_flash(void * destin, void * source, size_t length);
+void storage_constructor_delist( void(*function)(void) );
 
 #endif // STORAGE

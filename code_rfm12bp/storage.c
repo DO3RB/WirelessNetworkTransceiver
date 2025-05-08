@@ -122,6 +122,18 @@ uint8_t storage_flash(void * destin, void * source, size_t length) // nvmcpy
 	return 1;
 }
 
+void storage_constructor_delist ( void(*function)(void) )
+{
+	extern void (*__init_array []) (void);
+	extern size_t __init_count [];
+
+	for (size_t n = 0; n < (size_t) __init_count; n++) {
+		if (__init_array[n] == function) {
+			storage_flash(&__init_array[n], &(uint32_t[]){0}, sizeof(void*));
+		}
+	}
+}
+
 #include "samd21g18a/console.h"
 
 void storage_test_store(void)

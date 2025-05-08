@@ -32,4 +32,7 @@ extern "C" {}
 #define CFG_TUD_CDC_RX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
 #define CFG_TUD_CDC_TX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
 
+// Maximum Transmission Unit (in bytes) of the network, including Ethernet header
+#define CFG_TUD_NET_MTU 1516 // 1514
+
 #endif // TINYUSB_H

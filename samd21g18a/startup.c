@@ -183,10 +183,9 @@ void handler_reset(void)
 		PORT_WRCONFIG_HWSEL | PORT_WRCONFIG_WRPINCFG | PORT_WRCONFIG_WRPMUX |
 		PORT_WRCONFIG_PMUX(MUX_PA24G_USB_DM) | PORT_WRCONFIG_PMUXEN | PORT_PA24G_USB_DM>>16 | PORT_PA25G_USB_DP>>16;
 
-	/* Initialize the System Timer */
-	SysTick->LOAD = SysTick_LOAD_RELOAD_Msk;
-	SysTick->VAL  = 0UL;
-	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
+	/* Disable the System Timer */
+	SysTick->CTRL = 0u;
+	SysTick->VAL  = 0u;
 
 	/* Initialize OSCULP32K at 1kHz */
 	REG_GCLK_GENDIV = GCLK_GENDIV_ID(1) | GCLK_GENDIV_DIV(4);
@@ -208,18 +207,45 @@ void handler_reset(void)
 	REG_GCLK_CLKCTRL = GCLK_CLKCTRL_ID_RTC | GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK1;
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
 	RTC->MODE2.CTRL.bit.ENABLE = 0;
+	REG_RTC_MODE2_EVCTRL = RTC_MODE2_EVCTRL_PEREO0; // event every 8ms
 	REG_RTC_MODE2_CTRL = RTC_MODE2_CTRL_MODE_COUNT32 | RTC_MODE2_CTRL_PRESCALER_DIV1024 | RTC_MODE2_CTRL_ENABLE;
 
-	/* Relocate the DATA segment and zero the BSS */
+	/* Initialize Counter capturing Cycles */
+	PM->APBCMASK.reg |= PM_APBCMASK_TC4 | PM_APBCMASK_EVSYS;
+	REG_GCLK_CLKCTRL = GCLK_CLKCTRL_ID_TC4_TC5 | GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0;
+	// configure timer counter
+	REG_TC4_EVCTRL = TC_EVCTRL_TCEI;
+	REG_TC4_CTRLC = TC_CTRLC_CPTEN0;
+	REG_TC4_CTRLA = TC_CTRLA_MODE_COUNT32 | TC_CTRLA_ENABLE;
+	// event system captures every 8ms
+	REG_EVSYS_USER = EVSYS_USER_CHANNEL(2+1) | EVSYS_USER_USER(EVSYS_ID_USER_TC4_EVU);
+	REG_EVSYS_CHANNEL = EVSYS_CHANNEL_CHANNEL(2) | EVSYS_CHANNEL_EVGEN(EVSYS_ID_GEN_RTC_PER_0) | EVSYS_CHANNEL_PATH_ASYNCHRONOUS;
+	// request continuous read of COUNT32 reg
+	REG_TC4_READREQ = TC_READREQ_RREQ | TC_READREQ_RCONT | TC_READREQ_ADDR(0x10);
+
+	/* Initialize C runtime */
+
 	uint32_t *dst, *src = __data_text;
+	// relocate the DATA segment and zero the BSS
 	dst = __data_start; while (dst < __data_end) *dst++ = *src++;
 	dst = __bss_start;  while (dst < __bss_end)  *dst++ = 0x00000000;
 
 //	memcpy(__data_start, __data_text, (uint8_t*) __data_end - (uint8_t*) __data_start);
 //	memset(__bss_start, 0x00, (uint8_t*) __bss_end - (uint8_t*) __bss_start);
 
-	/* Initialize newlib C library */
-	void __libc_init_array(void); __libc_init_array();
+	extern void (*__preinit_array []) (void);
+	extern size_t __preinit_count [];
+	// execute internal cpp constructors
+	for (size_t n = 0; n < (size_t) __preinit_count; n++) {
+		void(*fn)(void) = __preinit_array[n]; if (fn) fn();
+	}
+
+	extern void (*__init_array []) (void);
+	extern size_t __init_count [];
+	// execute active constructors
+	for (size_t n = 0; n < (size_t) __init_count; n++) {
+		void(*fn)(void) = __init_array[n]; if (fn) fn();
+	}
 
 	/* Change execution context */
 	__set_PSP((uint32_t) __stack - 1024); // process stack pointer
@@ -232,7 +258,7 @@ void handler_reset(void)
 // living on to tell the tale
 #include "tinyusb/device/usbd.h"
 #include "fiber.h"
-void hardfault_print(unsigned int * frame)
+void hardfault(unsigned int * frame)
 {
 	// disable all fibers except tud_task
 	extern fiber_t fiber;
@@ -256,10 +282,10 @@ void handler_hardfault(void)
 	"	mov		R1, LR			\n"
 	"	tst		R0, R1			\n"
 	"	bne		1f				\n" // branch forward to one
-	"	mrs		R0, MSP			\n"
+	"	mrs		R0, MSP			\n" // came from interrupt
 	"	b		2f				\n" // branch forward to two
-"	1:	mrs		R0, PSP			\n"
-"	2:	mov		R2, %[FN]		\n"
+"	1:	mrs		R0, PSP			\n" // came from process
+"	2:	ldr		R2, =hardfault	\n"
 	"	ldr		R3, =0x01000000	\n" // StateReg Thumb flag
 //	"	movs	R4, #3			\n"
 //	"	msr		control, R4		\n"
@@ -270,6 +296,6 @@ void handler_hardfault(void)
 //	"	ldr		R0, =0xFFFFFFFD \n" // EXC_RETURN_THREAD_PSP
 	"	ldr		R0, =0xFFFFFFF9 \n" // EXC_RETURN_THREAD_MSP
 	"	bx		R0				\n"
-	:: [FN]"r"(&hardfault_print) : "r0","r1","r2","r3"
+	:: "i"(&hardfault) : "r0","r1","r2","r3"
 	);
 }

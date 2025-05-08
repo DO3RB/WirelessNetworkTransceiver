@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef TINYUSB_ECM_H
 #define TINYUSB_ECM_H
 
@@ -8,11 +10,6 @@
 
 /* declared here, NOT in usb_descriptors.c, so that the driver can intelligently ZLP as needed */
 #define CFG_TUD_NET_SIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
-
-/* Maximum Transmission Unit (in bytes) of the network, including Ethernet header */
-#ifndef CFG_TUD_NET_MTU
-#define CFG_TUD_NET_MTU 1516 // 1514
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,16 +55,36 @@ void tud_network_init_cb(void);
 //--------------------------------------------------------------------+
 // INTERNAL USBD-CLASS DRIVER API
 //--------------------------------------------------------------------+
+
 void     ecm_init            (void);
 bool     ecm_deinit          (void);
 void     ecm_reset           (uint8_t rhport);
 uint16_t ecm_open            (uint8_t rhport, tusb_desc_interface_t const * itf_desc, uint16_t max_len);
 bool     ecm_control_xfer_cb (uint8_t rhport, uint8_t stage, tusb_control_request_t const * request);
 bool     ecm_xfer_cb         (uint8_t rhport, uint8_t ep_addr, xfer_result_t result, uint32_t xferred_bytes);
-void     ecm_report          (uint8_t *buf, uint16_t len);
 
 #ifdef __cplusplus
 }
 #endif
+
+//--------------------------------------------------------------------+
+// DEVICE DRIVER
+//--------------------------------------------------------------------+
+
+#if CFG_TUSB_DEBUG >= CFG_TUD_LOG_LEVEL
+	#define DRIVER_NAME(_name) _name
+#else
+	#define DRIVER_NAME(_name) NULL
+#endif
+
+#define TINYUSB_ECM_DRIVER {\
+	.name            = DRIVER_NAME("ECM"),\
+	.init            = ecm_init,\
+	.deinit          = ecm_deinit,\
+	.reset           = ecm_reset,\
+	.open            = ecm_open,\
+	.control_xfer_cb = ecm_control_xfer_cb,\
+	.xfer_cb         = ecm_xfer_cb,\
+	.sof             = NULL}
 
 #endif // TINYUSB_ECM_H

@@ -37,40 +37,29 @@ SECTIONS
 
 	.text ORIGIN(ROM) (READONLY) :
 	{
-		KEEP(*(.vectors .vectors.*))
+		KEEP (*(.vectors .vectors.*))
+		*(SORT_BY_ALIGNMENT(.gnu.linkonce.r.*));
+		*(SORT_BY_ALIGNMENT(.rodata));
+		*(SORT_BY_ALIGNMENT(.rodata.*));
 		*(.gnu.linkonce.t.* .text .text.*)
-		*(.gnu.linkonce.r.* .rodata .rodata.*)
 		*(.gnu.linkonce.armextab.* .ARM.extab*)
 		*(.glue_7) *(.glue_7t)
 
 		. = ALIGN(4);
 		__console_start = .;
-		KEEP(*(.console .console.*))
+		KEEP (*(.console .console.*))
 		__console_end = .;
 
-		/* Support C constructors, and C destructors in both user code
-		   and the C library. This also provides support for C++ code. */
 		. = ALIGN(4);
-		KEEP(*(.init))
-		. = ALIGN(4);
-		__preinit_array_start = .;
+		__preinit_array = .;
 		KEEP (*(.preinit_array))
-		__preinit_array_end = .;
+		__preinit_count = ABSOLUTE(. - __preinit_array)/4;
 
 		. = ALIGN(4);
-		__init_array_start = .;
+		__init_array = .;
 		KEEP (*(SORT(.init_array.*)))
 		KEEP (*(.init_array))
-		__init_array_end = .;
-
-		. = ALIGN(4);
-		KEEP (*crtbegin.o(.ctors))
-		KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-		KEEP (*(SORT(.ctors.*)))
-		KEEP (*crtend.o(.ctors))
-
-		. = ALIGN(4);
-		KEEP(*(.fini))
+		__init_count = ABSOLUTE(. - __init_array)/4;
 
 		. = ALIGN(4);
 		__fini_array_start = .;
@@ -78,10 +67,6 @@ SECTIONS
 		KEEP (*(SORT(.fini_array.*)))
 		__fini_array_end = .;
 
-		KEEP (*crtbegin.o(.dtors))
-		KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-		KEEP (*(SORT(.dtors.*)))
-		KEEP (*crtend.o(.dtors))
 	} > ROM : TEXT
 
 	/* .ARM.exidx is sorted, so has to go in its own output section.  */

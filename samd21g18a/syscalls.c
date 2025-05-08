@@ -104,16 +104,18 @@ void _exit (int status)
 	__builtin_unreachable();
 }
 
+#include <limits.h>
+
 int usleep (useconds_t usec)
 {
 	unsigned diff, time, mark;
-	mark = SysTick->VAL;
+	mark = REG_TC4_COUNT32_COUNT;
 	usec = usec * 48;
 	while (1) {
 		fiber_yield();
-		time = SysTick->VAL; // systick counts downward
-		diff = (mark - time) & SysTick_VAL_CURRENT_Msk;
-		if (diff == 0) diff  = SysTick_LOAD_RELOAD_Msk;
+		time = REG_TC4_COUNT32_COUNT;
+		diff = time - mark;
+		if (diff == 0) diff = UINT_MAX;
 		if (diff < usec) {
 			usec = usec - diff;
 			mark = time;

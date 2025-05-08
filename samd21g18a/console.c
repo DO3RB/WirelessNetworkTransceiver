@@ -9,7 +9,6 @@
 #include "console.h"
 
 #include "sam.h"
-#include "fiber.h"
 #include "version.h"
 
 #include <malloc.h>
@@ -17,8 +16,6 @@
 CONSOLE_DAT(load, exit,  1)
 CONSOLE_DAT(halt, exit,  0)
 CONSOLE_DAT(boot, exit, -1)
-
-CONSOLE_RUN(fiber, fiber_print)
 
 void console_version(void) { write(STDOUT_FILENO, VERSION, strlen(VERSION)); }
 CONSOLE_RUN(version, console_version)

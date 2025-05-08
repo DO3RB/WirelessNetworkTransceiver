@@ -97,6 +97,7 @@ uint_fast16_t do3rb_golay_decode(uint_fast32_t code)
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <time.h>
 #include "samd21g18a/fiber.h"
 #include "samd21g18a/sam.h"
 #include "samd21g18a/console.h"
@@ -161,10 +162,9 @@ CONSOLE_RUN(popcount, do3rb_test_popcount)
 void do3rb_test_cycles(void)
 {
 	volatile uint32_t code = 0;
-	unsigned int time = SysTick->VAL;
-	if (do3rb_synchron_detect(code)) return; // 41 29
-//  code = do3rb_synchron_detect(code);      // 46
-	time = (time - SysTick->VAL) & SysTick_VAL_CURRENT_Msk;
+	unsigned int time = clock();
+	if (do3rb_synchron_detect(code)) return;
+	time = clock() - time; // 30
 	printf("%d\r\n", time);
 }
 CONSOLE_RUN(cycles, do3rb_test_cycles)

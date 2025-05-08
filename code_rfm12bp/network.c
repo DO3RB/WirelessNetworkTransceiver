@@ -8,6 +8,8 @@
 #include "channel.h"
 #include "storage.h"
 
+#include "samd21g18a/tinyusb_ecm.h"
+
 void printp(uint8_t *buf, uint16_t len)
 {
 	for (uint16_t n = 0; n < len; n++) {

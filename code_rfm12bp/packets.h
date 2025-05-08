@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#include "tinyusb_ecm.h"
+#include "tinyusb.h" // CFG_TUD_NET_MTU
 
 #define NET_ETH_LEN 6
 #define NET_IP4_LEN 4
