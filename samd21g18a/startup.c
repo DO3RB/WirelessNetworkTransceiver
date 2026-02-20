@@ -16,43 +16,42 @@ extern uint32_t __stack[];
 void handler_none(void) { exit(1); }
 
 /* Cortex-M0+ core handlers */
-void handler_reset         (void);
-void handler_NMI           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_hardfault     (void);
-void handler_SVC           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_PendSV        (void) __attribute__ ((weak, alias("handler_none")));
-void handler_systick       (void) __attribute__ ((weak, alias("handler_none")));
+void handler_reset     (void);
+void handler_NMI       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_hardfault (void);
+void handler_SVC       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_PendSV    [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_systick   [[gnu::weak,gnu::alias("handler_none")]] (void);
 
 /* Peripherals handlers */
-void handler_PM            (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SYSCTRL       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_WDT           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_RTC           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_EIC           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_NVMCTRL       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_DMAC          (void) __attribute__ ((weak, alias("handler_none")));
-void handler_USB           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_EVSYS         (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SERCOM0       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SERCOM1       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SERCOM2       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SERCOM3       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SERCOM4       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_SERCOM5       (void) __attribute__ ((weak, alias("handler_none")));
-void handler_TCC0          (void) __attribute__ ((weak, alias("handler_none")));
-void handler_TCC1          (void) __attribute__ ((weak, alias("handler_none")));
-void handler_TCC2          (void) __attribute__ ((weak, alias("handler_none")));
-void handler_TC3           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_TC4           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_TC5           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_ADC           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_AC            (void) __attribute__ ((weak, alias("handler_none")));
-void handler_DAC           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_PTC           (void) __attribute__ ((weak, alias("handler_none")));
-void handler_I2S           (void) __attribute__ ((weak, alias("handler_none")));
+void handler_PM        [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SYSCTRL   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_WDT       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_RTC       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_EIC       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_NVMCTRL   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_DMAC      [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_USB       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_EVSYS     [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SERCOM0   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SERCOM1   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SERCOM2   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SERCOM3   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SERCOM4   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_SERCOM5   [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_TCC0      [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_TCC1      [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_TCC2      [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_TC3       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_TC4       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_TC5       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_ADC       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_AC        [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_DAC       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_PTC       [[gnu::weak,gnu::alias("handler_none")]] (void);
+void handler_I2S       [[gnu::weak,gnu::alias("handler_none")]] (void);
 
-__attribute__((used, section(".vectors")))
-const DeviceVectors handler_vector = {
+const DeviceVectors handler_vector [[gnu::section(".vectors")]] = {
 
 	/* Configure Initial Stack Pointer, using linker-generated symbols */
 	.pvStack               = __stack,
@@ -104,8 +103,7 @@ const DeviceVectors handler_vector = {
 	.pvReserved28          = NULL,             // 28 Reserved
 };
 
-__attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns")))
-void handler_reset(void)
+void handler_reset [[gnu::optimize("-fno-tree-loop-distribute-patterns")]] (void)
 {
 	/* Set the vector table base address */
 	SCB->VTOR = (uintptr_t) & handler_vector;
@@ -233,13 +231,6 @@ void handler_reset(void)
 //	memcpy(__data_start, __data_text, (uint8_t*) __data_end - (uint8_t*) __data_start);
 //	memset(__bss_start, 0x00, (uint8_t*) __bss_end - (uint8_t*) __bss_start);
 
-	extern void (*__preinit_array []) (void);
-	extern size_t __preinit_count [];
-	// execute internal cpp constructors
-	for (size_t n = 0; n < (size_t) __preinit_count; n++) {
-		void(*fn)(void) = __preinit_array[n]; if (fn) fn();
-	}
-
 	extern void (*__init_array []) (void);
 	extern size_t __init_count [];
 	// execute active constructors
@@ -250,6 +241,7 @@ void handler_reset(void)
 	/* Change execution context */
 	__set_PSP((uint32_t) __stack - 1024); // process stack pointer
 	__set_CONTROL(CONTROL_SPSEL_Msk | CONTROL_nPRIV_Msk); // PROCESS_STACK PROCESS_PRIVILEGED
+	__set_MSP((uint32_t) __stack); // main stack pointer
 
 	/* Branch to main function */
 	int main(void); exit(main());
@@ -274,8 +266,7 @@ void hardfault(unsigned int * frame)
 }
 
 // snatching the error code from the trap frame
-__attribute__((naked))
-void handler_hardfault(void)
+void handler_hardfault [[gnu::naked]] (void)
 {
 	asm volatile (
 	"	movs	R0, #4			\n"

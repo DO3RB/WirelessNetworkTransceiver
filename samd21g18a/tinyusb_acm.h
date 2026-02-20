@@ -66,6 +66,7 @@ bool     acm_xfer_cb         (uint8_t rhport, uint8_t ep_addr, xfer_result_t res
 	.open            = acm_open,\
 	.control_xfer_cb = acm_control_xfer_cb,\
 	.xfer_cb         = acm_xfer_cb,\
+	.xfer_isr        = NULL,\
 	.sof             = NULL}
 
 #endif // TINYUSB_ACM_H

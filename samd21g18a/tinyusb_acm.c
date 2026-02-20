@@ -37,8 +37,8 @@ typedef struct
   int32_t  tx_len;
 
   // Endpoint Transfer buffer
-  CFG_TUSB_MEM_ALIGN uint8_t epout_buf[BULK_PACKET_SIZE];
-  CFG_TUSB_MEM_ALIGN uint8_t epin_buf[BULK_PACKET_SIZE];
+  alignas(4) uint8_t epout_buf[BULK_PACKET_SIZE];
+  alignas(4) uint8_t epin_buf [BULK_PACKET_SIZE];
 
 } acm_interface_t;
 

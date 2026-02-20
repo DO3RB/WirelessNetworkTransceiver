@@ -6,11 +6,11 @@
 #include "samd21g18a/fiber.h"
 #include "circuit.h"
 
-volatile DmacDescriptor conduit_base[2] __attribute__((aligned(16)));
-volatile DmacDescriptor conduit_back[2] __attribute__((aligned(16)));
+volatile alignas(16) DmacDescriptor conduit_base[2];
+volatile alignas(16) DmacDescriptor conduit_back[2];
 
-static volatile uint8_t conduit_data    [CONDUIT_BYTE];
-static volatile uint8_t conduit_data_vdi[CONDUIT_FLAG];
+static volatile uint8_t conduit_data    [[gnu::noinit]][CONDUIT_BYTE];
+static volatile uint8_t conduit_data_vdi[[gnu::noinit]][CONDUIT_FLAG];
 inline uint_fast16_t conduit_mark_dma(void) { return CONDUIT_BYTE - conduit_back[1].BTCNT.reg; }
 uint_fast16_t conduit_mark_cpu = 0;
 

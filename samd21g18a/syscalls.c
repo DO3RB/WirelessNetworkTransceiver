@@ -54,8 +54,7 @@ int _close_r (struct _reent* impure, int fd)
 	return 0;
 }
 
-__attribute__((used))
-int _fstat_r (struct _reent* impure, int fd, struct stat* st)
+int _fstat_r [[gnu::used]] (struct _reent* impure, int fd, struct stat* st)
 {
 	(void) impure;
 	(void) fd;
@@ -63,8 +62,7 @@ int _fstat_r (struct _reent* impure, int fd, struct stat* st)
 	return 0;
 }
 
-__attribute__((used))
-int _isatty_r (struct _reent* impure, int fd)
+int _isatty_r [[gnu::used]] (struct _reent* impure, int fd)
 {
 	(void) impure;
 	(void) fd;
@@ -97,6 +95,13 @@ int _getpid_r (struct _reent* impure)
 
 void _exit (int status)
 {
+	extern void (*__fini_array []) (void);
+	extern size_t __fini_count [];
+	// execute active destructors in reverse order
+	for (signed n = (signed) __fini_count-1; n >= 0; n--) {
+		void(*fn)(void) = __fini_array[n]; if (fn) fn();
+	}
+
 	if (status == 0) { asm("BKPT #0"); while(1); }
 	if (status  > 0) *((volatile uint32_t *)(HMCRAMC0_ADDR+HMCRAMC0_SIZE-4)) = 0xF01669EF;
 	tud_disconnect();

@@ -20,13 +20,13 @@ extern "C" {}
 #define CFG_TUD_ENABLED       1
 #define CFG_TUD_MAX_SPEED     OPT_MODE_DEFAULT_SPEED
 #define CFG_TUSB_MEM_SECTION
-#define CFG_TUSB_MEM_ALIGN    __attribute__((aligned(4)))
 
 //--------------------------------------------------------------------
 // DEVICE CONFIGURATION
 //--------------------------------------------------------------------
 
 #define CFG_TUD_ENDPOINT0_SIZE 64
+#define CFG_TUD_ENDPOINT0_BUFSIZE 64
 
 // CDC FIFO size of TX and RX
 #define CFG_TUD_CDC_RX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)

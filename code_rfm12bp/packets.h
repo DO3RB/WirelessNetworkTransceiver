@@ -16,11 +16,11 @@
 #define ETH_P_AX25  0x0200 // Dummy protocol id for AX.25
 
 // https://en.wikipedia.org/wiki/Ethernet_frame
-typedef struct FrameETH {
+typedef struct [[gnu::packed]] FrameETH {
     uint8_t  dst[NET_ETH_LEN];
     uint8_t  src[NET_ETH_LEN];
     uint16_t typ;
-} __attribute__((packed)) FrameETH_t;
+} FrameETH_t;
 
 #define ARP_HT_ETH 0x0100
 #define ARP_PT_IP4 0x0008
@@ -28,7 +28,7 @@ typedef struct FrameETH {
 #define ARP_OP_RSP 0x0200
 
 // https://datatracker.ietf.org/doc/html/rfc826
-typedef struct FrameARP {
+typedef struct [[gnu::packed]] FrameARP {
     uint16_t htyp; // hardware type
     uint16_t ptyp; // protocol type
     uint8_t  hlen; // hardware length
@@ -38,7 +38,7 @@ typedef struct FrameARP {
     uint8_t  spa[NET_IP4_LEN]; // sender protocol address
     uint8_t  tha[NET_ETH_LEN]; // target hardware address
     uint8_t  tpa[NET_IP4_LEN]; // target protocol address
-} __attribute__((packed)) FrameARP_t;
+} FrameARP_t;
 
 #define IP_PN_ICMP 0x01
 #define IP_PN_TCP  0x06
@@ -50,7 +50,7 @@ typedef struct FrameARP {
 #define IP_NOFRAG  0x0040
 
 // https://datatracker.ietf.org/doc/html/rfc791#section-3.1
-typedef struct FrameIP4 {
+typedef struct [[gnu::packed]] FrameIP4 {
     uint8_t  ihl:4; // internet header length
     uint8_t  vrs:4; // version
     uint8_t  tos;   // type of service dscp:6 ecn:2
@@ -62,13 +62,13 @@ typedef struct FrameIP4 {
     uint16_t chk;   // header checksum
     uint8_t  src[NET_IP4_LEN];
     uint8_t  dst[NET_IP4_LEN];
-} __attribute__((packed)) FrameIP4_t;
+} FrameIP4_t;
 
 #define ICMP_ECHO_RPL 0x00
 #define ICMP_ECHO_RQS 0x08
 
 // https://datatracker.ietf.org/doc/html/rfc792
-typedef struct FrameICMP {
+typedef struct [[gnu::packed]] FrameICMP {
     uint8_t  type;
     uint8_t  code;
     uint16_t csum;
@@ -77,18 +77,18 @@ typedef struct FrameICMP {
         struct {uint16_t iden; uint16_t seqn;};
     };
     uint8_t  data[];
-} __attribute__((packed)) FrameICMP_t;
+} FrameICMP_t;
 
 #define PORT_DHCP_SRV 0x4300 // 67
 #define PORT_DHCP_CLT 0x4400 // 68
 
 // https://datatracker.ietf.org/doc/html/rfc768
-typedef struct FrameUDP {
+typedef struct [[gnu::packed]] FrameUDP {
     uint16_t src;   // souce port
     uint16_t dst;   // destination port
     uint16_t len;   // length
     uint16_t chk;   // pseudo header checksum
-} __attribute__((packed)) FrameUDP_t;
+} FrameUDP_t;
 
 #define DHCP_RQS 1
 #define DHCP_RPL 2
@@ -97,7 +97,7 @@ typedef struct FrameUDP {
 #define DHCP_BROAD 0x0080
 
 // https://datatracker.ietf.org/doc/html/rfc2131
-typedef struct FrameDHCP {
+typedef struct [[gnu::packed]] FrameDHCP {
     uint8_t  oper;      // packet opcode type
     uint8_t  htyp;      // hardware addr type
     uint8_t  hlen;      // hardware addr length
@@ -113,7 +113,7 @@ typedef struct FrameDHCP {
     uint8_t  lgcy[192]; // legacy sname and file
     uint32_t magi;      // magic number
     uint8_t  opts[];
-} __attribute__((packed)) FrameDHCP_t;
+} FrameDHCP_t;
 
 // https://datatracker.ietf.org/doc/html/rfc2132
 enum DHCP_OPTS {
@@ -141,22 +141,22 @@ enum DHCP_MESG {
 };
 
 // https://datatracker.ietf.org/doc/html/rfc4303
-typedef struct FrameESP {
+typedef struct [[gnu::packed]] FrameESP {
     uint32_t spi; // security parameters index
     uint32_t sqn; // sequence number
-} __attribute__((packed)) FrameESP_t;
+} FrameESP_t;
 
-typedef struct {
+typedef struct [[gnu::packed,gnu::scalar_storage_order("big-endian")]] {
     uint8_t  typ:4;
     uint8_t  src:4;
     uint8_t  dst:4;
     uint16_t len:12;
-} __attribute__((packed,scalar_storage_order("big-endian"))) packet_frame_t;
+} packet_frame_t;
 
-typedef struct {
+typedef struct [[gnu::packed,gnu::scalar_storage_order("big-endian")]] {
     uint16_t one:12;
     uint16_t two:12;
-} __attribute__((packed,scalar_storage_order("big-endian"))) packet_block_t;
+} packet_block_t;
 
 #define PACKET_RADIO_LEN (CFG_TUD_NET_MTU-sizeof(FrameETH_t)-sizeof(FrameIP4_t))
 
@@ -171,28 +171,28 @@ typedef union {
 //	arrange following into tree of structs and unions
 //	{ETH,ARP} {ETH,IP4,OCTET} {ETH,IP4,ICMP} {ETH,IP4,UDP,DHCP} {EMPTY,RADIO,BLOCKS}
 typedef union {
-	struct { // ETHER
+	struct [[gnu::packed]] { // ETHER
 		FrameETH_t eth;
 		union {
 		FrameARP_t arp;
-		struct {
+		struct [[gnu::packed]] {
 		FrameIP4_t ip4;
 		union {
 			FrameESP_t  esp;
 			FrameICMP_t icmp;
-			struct {
+			struct [[gnu::packed]] {
 			FrameUDP_t  udp;
 			FrameDHCP_t dhcp;
-			} __attribute__((packed));
-		};} __attribute__((packed));
-	};} __attribute__((packed));
-	struct { // RADIO
+			};
+		};};
+	};};
+	struct [[gnu::packed]] { // RADIO
 		uint8_t empty[sizeof(FrameETH_t)+sizeof(FrameIP4_t)-sizeof(packet_frame_t)];
 		union {
 		packet_frame_t frame;
 		packet_block_t block[PACKET_RADIO_LEN/sizeof(packet_block_t)+1];
 		};
-	} __attribute__((packed)) radio;
+	} radio;
 	uint8_t octet[CFG_TUD_NET_MTU];
 } packet_t;
 

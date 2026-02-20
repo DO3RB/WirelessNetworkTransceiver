@@ -133,6 +133,7 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
 	{(TUSB_DESC_STRING<<8)|sizeof(X),(X)}).N)
 
 // USB defines UTF16-LE aka UCS-2 wide string literals
+// change to char16_t S[][[nonstring]] when available
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunterminated-string-initialization"
@@ -157,7 +158,7 @@ uint16_t const * tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 
 #include "storage.h"
 
-__attribute__((constructor)) void tinyusb_flash ()
+void tinyusb_flash [[gnu::constructor]] ()
 {
 	uint16_t string[32];
 	storage_serial_utf16(string);

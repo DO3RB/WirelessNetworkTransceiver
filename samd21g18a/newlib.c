@@ -48,7 +48,7 @@ QUICKREF
 #undef __OPTIMIZE_SIZE__
 #undef PREFER_SIZE_OVER_SPEED
 
-__attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns"),always_inline))
+[[gnu::optimize("-fno-tree-loop-distribute-patterns"),gnu::always_inline]]
 inline void * memcpy (void * __restrict dst0, const void * __restrict src0, size_t len0)
 {
 #if defined(PREFER_SIZE_OVER_SPEED) || defined(__OPTIMIZE_SIZE__)
@@ -154,7 +154,7 @@ QUICKREF
 /* Threshhold for punting to the byte copier.  */
 #define TOO_SMALL(LEN)  ((LEN) < BIGBLOCKSIZE)
 
-__attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns"),always_inline))
+[[gnu::optimize("-fno-tree-loop-distribute-patterns"),gnu::always_inline]]
 void *
 memmove (void *dst_void,
 	const void *src_void,
@@ -279,7 +279,7 @@ QUICKREF
 #define UNALIGNED(X)   ((long)X & (LBLOCKSIZE - 1))
 #define TOO_SMALL(LEN) ((LEN) < LBLOCKSIZE)
 
-__attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns"),always_inline))
+[[gnu::optimize("-fno-tree-loop-distribute-patterns"),gnu::always_inline]]
 void *
 memset (void *m,
 	int c,
@@ -380,7 +380,7 @@ Supporting OS subroutines required: <<close>>, <<fstat>>, <<isatty>>,
 #include <string.h>
 #include <stdio.h>
 
-__attribute__ ((__optimize__("-fno-tree-loop-distribute-patterns")))
+[[gnu::optimize("-fno-tree-loop-distribute-patterns")]]
 int puts (char const * s) // __builtin_puts
 {
 	write(STDOUT_FILENO, s, strlen(s));

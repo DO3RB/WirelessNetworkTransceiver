@@ -48,7 +48,7 @@ void tud_network_init_cb(void)
 	fiber_create(&channel_init,0);
 }
 
-//__attribute__((flatten))
+//[[gnu::flatten]]
 void handler_USB(void)
 {
 	REG_PORT_OUTCLR0 = PORT_PA18;
@@ -72,7 +72,7 @@ void acm_line_state_cb(bool dtr, bool rts)
 }
 CONSOLE_DAT(header, acm_line_state_cb, true)
 
-//__attribute__((noinline,long_call,section(".ramfunc")))
+//[[gnu::noinline,gnu::long_call,gnu::section(".ramfunc")]]
 void coroutine(void)
 {
 	REG_PORT_OUTCLR0 = PORT_PA19;

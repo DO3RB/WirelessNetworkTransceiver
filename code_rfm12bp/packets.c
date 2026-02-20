@@ -1,6 +1,5 @@
 #include "packets.h"
 
-#include <stdlib.h>
 #include <stdio.h>
 
 #include "samd21g18a/fiber.h"
@@ -9,8 +8,8 @@
 #define PACKETS_COUNT 8
 #define PACKETS_ALLOC 6
 
-static packet_t  packets_data[PACKETS_ALLOC] __attribute__((aligned(4)));
-static packet_t* packets_ring[PACKETS_COUNT];
+static alignas(4) packet_t  packets_data [[gnu::noinit]] [PACKETS_ALLOC];
+static alignas(4) packet_t* packets_ring [PACKETS_COUNT];
 static uint_fast8_t packets_head;
 static uint_fast8_t packets_tail;
 

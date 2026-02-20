@@ -1,0 +1,28 @@
+Diagnostics:
+  Includes:
+    IgnoreHeader: 'samd21g18a/sam\.h'
+
+CompileFlags:
+  Add:
+    - -I.
+    - -Isamd21g18a
+    - -Itinyusb
+    - -Wall
+    - -Wextra
+    - -mcpu=cortex-m0plus
+    - -mthumb
+    - -msoft-float
+    # additional warnings
+    - -Wshadow
+#   - -Wmissing-noreturn
+    - -Wunreachable-code
+    - -Wconditional-uninitialized
+    # silence clang mismatches GCC
+    - -Wno-unknown-attributes
+    # specify baremetal target
+    - --sysroot=/usr/arm-none-eabi/
+    - -target
+    - arm-none-eabi
+    - -std=gnu23
+    # warn against GCC extensions
+#   - -Wgnu

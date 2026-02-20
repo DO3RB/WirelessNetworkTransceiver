@@ -70,11 +70,11 @@ void ecm_notify_speed(void)
 
 #include <malloc.h>
 
-uint8_t* network_packets_get(void) { return malloc(CFG_TUD_NET_MTU); }
-void network_packets_put(uint8_t* packet) { return free(packet); }
+uint8_t* network_packets_get (void) { return malloc(CFG_TUD_NET_MTU); }
+void     network_packets_put (uint8_t* packet) { return free(packet); }
 
-uint8_t* packets_get(void) __attribute__ ((weak, alias("network_packets_get")));
-void packets_put(uint8_t* packet) __attribute__ ((weak, alias("network_packets_put")));
+uint8_t* packets_get [[gnu::weak,gnu::alias("network_packets_get")]] (void);
+void     packets_put [[gnu::weak,gnu::alias("network_packets_put")]] (uint8_t* packet);
 
 static uint8_t * ecm_xmit_ptr;
 static int16_t ecm_xmit_len = -1;

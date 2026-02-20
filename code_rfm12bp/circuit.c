@@ -66,8 +66,7 @@ void circuit_init(void)
 	NVIC_EnableIRQ(EIC_IRQn);
 }
 
-__attribute__((noinline,noclone))
-uint8_t circuit_asic_byte(uint8_t byte)
+uint8_t circuit_asic_byte [[gnu::noinline,gnu::noclone]] (uint8_t byte)
 {
 	REG_PORT_WRCONFIG0 = CIRCUIT_MISO | CIRCUIT_MOSI | CIRCUIT_MSCK | PORT_WRCONFIG_WRPMUX | CIRCUIT_ASIC;
 	REG_PORT_OUTCLR0 = CIRCUIT_nSEL;
@@ -79,8 +78,7 @@ uint8_t circuit_asic_byte(uint8_t byte)
 	return byte;
 }
 
-__attribute__((noinline,noclone))
-uint16_t circuit_asic_word(uint16_t xmit)
+uint16_t circuit_asic_word [[gnu::noinline,gnu::noclone]] (uint16_t xmit)
 {
 	uint16_t recv;
 	REG_PORT_WRCONFIG0 = CIRCUIT_MISO | CIRCUIT_MOSI | CIRCUIT_MSCK | PORT_WRCONFIG_WRPMUX | CIRCUIT_ASIC;
@@ -96,8 +94,7 @@ uint16_t circuit_asic_word(uint16_t xmit)
 	return recv;
 }
 
-__attribute__((noinline,noclone))
-uint8_t circuit_fifo_byte_block(uint8_t byte)
+uint8_t circuit_fifo_byte_block [[gnu::noinline,gnu::noclone]] (uint8_t byte)
 {
 	REG_PORT_WRCONFIG0 = CIRCUIT_MISO | CIRCUIT_MOSI | CIRCUIT_MSCK | PORT_WRCONFIG_WRPMUX | CIRCUIT_FIFO;
 	REG_SERCOM0_SPI_DATA = byte;
@@ -107,8 +104,7 @@ uint8_t circuit_fifo_byte_block(uint8_t byte)
 	return byte;
 }
 
-__attribute__((noinline,noclone))
-uint8_t circuit_fifo_byte_yield(uint8_t byte)
+uint8_t circuit_fifo_byte_yield [[gnu::noinline,gnu::noclone]] (uint8_t byte)
 {
 	REG_PORT_WRCONFIG0 = CIRCUIT_MISO | CIRCUIT_MOSI | CIRCUIT_MSCK | PORT_WRCONFIG_WRPMUX | CIRCUIT_FIFO;
 	REG_SERCOM0_SPI_DATA = byte;

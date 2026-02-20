@@ -9,9 +9,13 @@
 
 enum fiber_tasks {V1=0,V2,V3,V4,V5,V6,SL,FP,SP,LR,RLEN};
 
+typedef int jmp_buf[RLEN];
+int setjmp [[gnu::returns_twice]] (jmp_buf env);
+void longjmp [[noreturn]] (jmp_buf env, int val);
+
 typedef struct fiber {
-   int   tasks[FIBER][RLEN]; // task control block
-   int (*funcs[FIBER])(void);
+   jmp_buf tasks[FIBER]; // task control block
+   int   (*funcs[FIBER])(void);
   uint8_t now;
 } fiber_t;
 

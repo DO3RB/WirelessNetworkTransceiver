@@ -78,13 +78,12 @@ uint8_t storage_xlc(void)
 }
 
 
-uint8_t storage_array[256] STORE;
+uint8_t storage_array STORE [256];
 
 #include "samd21g18a/sam.h"
 #include <malloc.h>
 
-__attribute__((noinline,noclone))
-uint8_t storage_flash(void * destin, void * source, size_t length) // nvmcpy
+uint8_t storage_flash [[gnu::noinline,gnu::noclone]] (void * destin, void * source, size_t length) // nvmcpy
 {
 	const ssize_t row_size = NVMCTRL_PAGE_SIZE * NVMCTRL_ROW_PAGES;
 	uint8_t *dst = destin; uint8_t *src = source; ssize_t len = length;

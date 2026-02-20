@@ -1,7 +1,7 @@
 #include "fiber.h"
 
+#include <stdlib.h>
 #include <stdint.h>
-#include <setjmp.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <time.h>
@@ -24,32 +24,43 @@ int8_t fiber_create(void *routine, uint8_t loop)
 	return nxt;
 }
 
-__attribute__((naked,noreturn))
-void fiber_once(void)
+#if defined(__clang__)
+[[noreturn]]
+#elif defined(__GNUC__)
+[[noreturn,gnu::naked]]
+#endif
+void fiber_once (void)
 {
 	fiber.funcs[fiber.now]();
 	fiber.funcs[fiber.now] = 0;
 	fiber_yield();
+	__builtin_unreachable();
 }
 
-__attribute__((naked,noreturn))
-void fiber_loop(void)
+#if defined(__clang__)
+[[noreturn]]
+#elif defined(__GNUC__)
+[[noreturn,gnu::naked]]
+#endif
+void fiber_loop (void)
 {
+	int(*function)(void) = fiber.funcs[fiber.now];
 	while (1) {
-		fiber.funcs[fiber.now]();
+		function();
 		fiber_yield();
 	}
 }
 
-void fiber_yield(void)
+void fiber_yield (void)
 {
-	uint8_t now = fiber.now, nxt = now;
+	unsigned now = fiber.now, nxt = now;
 	for (unsigned n = 0; n < FIBER; n++) {
 		nxt = (nxt+1) % FIBER;
 		if (fiber.funcs[nxt] == NULL) continue;
-		if ((nxt == now) || setjmp((long long int*)fiber.tasks[now])) return;
-		else { fiber.now = nxt; longjmp((long long int*)fiber.tasks[nxt],1); }
+		if ((nxt == now) || setjmp(fiber.tasks[now])) return;
+		else { fiber.now = nxt; longjmp(fiber.tasks[nxt],1); }
 	}
+	exit(1);
 }
 
 void fiber_exit(void)
@@ -189,7 +200,7 @@ clock_t clock (void) { return REG_TC4_COUNT32_COUNT; }
 
 inline void system_timer_request ()
 {
-	while (REG_TC4_STATUS); // & TC_STATUS_SYNCBUSY); // write-sync
+//	while (REG_TC4_STATUS); // & TC_STATUS_SYNCBUSY); // write-sync
 	*(RwReg8*)0x42003003u = (uint8_t) ((TC_READREQ_RCONT | TC_READREQ_RREQ)>>8);
 }
 
@@ -198,10 +209,10 @@ void entropy_feed ()
 	if (!(REG_TC4_INTFLAG & TC_INTFLAG_MC0)) return;
 	unsigned read = REG_TC4_COUNT32_CC0;
 	REG_TC4_INTFLAG = TC_INTFLAG_MC0;
+	system_timer_request();
 	unsigned byte = read & 0xFF;
 	unsigned mark = (read >> 8) & 0xF;
 	((uint8_t*)xoshiro)[mark] ^= byte;
-	system_timer_request();
 }
 
 void entropy_test (void)
