@@ -1,1 +1,1 @@
-const char VERSION[] = "rfm12bp-b096ef58f9061e40c5a13aaf9f9687b3b3062705-dirty\r\n";
+const char VERSION[] = "rfm12bp-5ae60c4d38d8353e021ff0195ac1518a09798c02-dirty\r\n";

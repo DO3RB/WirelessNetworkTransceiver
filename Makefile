@@ -2,9 +2,9 @@ ifeq ($(PROJECT),)
 $(error Missing PROJECT path)
 endif
 
-MAKEFLAGS := --jobs=$(shell nproc)
+MAKEFLAGS := -O -r --jobs=$(shell nproc)#-R
 SHELL := $(shell which bash)
-.SHELLFLAGS := -eu -o pipefail -c
+#.SHELLFLAGS := -eu -o pipefail -c
 
 MCU := samd21g18a
 LDFILE := $(MCU)/sam.ld
@@ -31,41 +31,52 @@ CXXFLAGS := -fno-use-cxa-atexit -fno-exceptions -fno-unwind-tables -fno-rtti
 LDFLAGS := -nostdlib -T $(LDFILE) -Wl,--gc-sections
 LDLIBS := -Wl,--start-group -lm -lc_nano -lgcc -Wl,--end-group#-lg_nano -lstdc++_nano -lsupc++_nano
 
-# arm-none-eabi-gcc -I. -I.. -I ../tinyusb -DCFG_TUSB_CONFIG_FILE=\"tinyusb.h\" -E -MMD -MP -MF- -o /dev/null main.c
-# echo | arm-none-eabi-gcc -mcpu=cortex-m0plus -dM -E - | sort
-
 BUILD := $(PROJECT)/.build
 
-NAMES = $(addprefix tinyusb/, tusb common/tusb_fifo device/usbd device/usbd_control portable/microchip/samd/dcd_samd)\
-	$(basename $(wildcard $(MCU)/*.c)) $(basename $(wildcard $(PROJECT)/*.c))
+.SILENT: clean diff version tinyusb analyzer stack flash remote size dbg lst nms global
+.PHONY:  clean diff version tinyusb analyzer stack flash remote size dbg lst nms global usb
+NOBLD := clean diff version tinyusb usb
 
-OBJS = $(addprefix $(BUILD)/, $(addsuffix .o, $(NAMES)))
+ifeq ($(filter $(NOBLD),$(MAKECMDGOALS)),)
+include  $(BUILD)/main.mk
+ROOTS := $(PROJECT)/main samd21g18a/syscalls samd21g18a/newlib
+endif
 
-all: version $(BUILD)/main.uf2 size
+all: version size $(BUILD)/main.uf2
+
+$(BUILD)/main.mk: $(BUILD)
+	@if [ ! -f '$@' ]; then set -- $(addprefix $(BUILD)/, $(ROOTS)); \
+	printf "OBJS := $$1.o\ninclude $$1.d\n"  > $@; shift; for f in "$$@"; do \
+	printf "OBJS += $$f.o\ninclude $$f.d\n" >> $@;  done; fi
 
 $(BUILD)/main.uf2: $(BUILD)/main.hex
-	loader/uf2conv.py -f 0x68ed2b88 -c -o $@ $<
+	@loader/uf2conv.py -f 0x68ed2b88 -c -o $@ $<
 
 $(BUILD)/main.hex: $(BUILD)/main.elf
-	$(OCP) -O ihex $< $@
+	@$(OCP) -O ihex $< $@
 
-$(BUILD)/main.debug.elf: $(OBJS) $(LDFILE)
-	$(LINK.c) -g3 $(OBJS) $(LDLIBS) $(OUTPUT_OPTION)
-
-$(BUILD)/main.elf: $(OBJS) $(LDFILE)
+$(BUILD)/main.debug.elf: LDFLAGS += -g3
+$(BUILD)/main.debug.elf $(BUILD)/main.elf: $(OBJS) $(LDFILE)
 	$(LINK.c) $(OBJS) $(LDLIBS) $(OUTPUT_OPTION)
 
-$(BUILD)/%.o : %.c Makefile | $(BUILD)
-	@mkdir -p $(dir $@)
-	$(COMPILE.c) $< $(OUTPUT_OPTION)
+$(BUILD)/%.o $(BUILD)/%.d: %.c Makefile
+	@mkdir -p $(@D)
+	$(COMPILE.c) $< -o $(BUILD)/$*.o
+	$(call gather_objs,$(BUILD)/$*)
 
 $(BUILD):
-	if [ -h "$(BUILD)" -a ! -e "$(BUILD)" ]; then rm $(BUILD); fi
-	ln -s $(shell mktemp -d) -T $(BUILD)
+	@if [ -h "$(BUILD)" -a ! -e "$(BUILD)" ]; then rm $(BUILD); fi
+	@ln -s $(shell mktemp -d) -T $(BUILD)
 
-DEPFILES := $(OBJS:%.o=%.d)
-$(DEPFILES):
-include $(wildcard $(DEPFILES))
+define gather_objs
+@flock -w 5 $(BUILD)/main.mk awk 'BEGIN { RS="[^\\\\]\\n"; FS=":" } \
+	ARGIND==1 { n=$$0; if (gsub("^include $(BUILD)/|\\.$$","",n)>1) { have[n]; } } \
+	ARGIND==2 && FNR>1 { n=$$1; if (sub(/\.h$$/,"",n) && (getline _ <(n".c"))>0) { need[n]; close(n".c"); } } \
+	END { for (name in need) if (!(name in have)) { \
+	print "OBJS += $(BUILD)/"name".o"; \
+	print "include $(BUILD)/"name".d"; \
+	}}' $(BUILD)/main.mk "$(1).d" >> $(BUILD)/main.mk
+endef
 
 version:
 	$(eval GIT := $(shell git describe --always --long --dirty --abbrev=40))
@@ -73,8 +84,8 @@ version:
 	$(eval NOW := '$(file < $(MCU)/version.c)')
 	if [ "$(STR)" != "$(NOW)" ]; then echo $(STR) > $(MCU)/version.c ; fi
 
-clean: $(BUILD)
-	rm -rf $(shell readlink -f $<) $<
+clean:
+	rm -rf $(shell readlink -f \"$(BUILD)\") "$(BUILD)"
 
 flash: $(BUILD)/main.uf2
 	echo -n 'Flashing... '
@@ -98,11 +109,11 @@ size: $(BUILD)/main.elf
 	{ if(n) {printf("%-10s %5s %s\n",$$1,$$2,$$3); n++ }} /^.stack*/{n=0}'
 
 dbg: $(BUILD)/main.debug.elf
-	$(DMP) -SCw --visualize-jumps=color --disassembler-color=extended --no-show-raw-insn $< | less -RS
+	$(DMP) -SCw --visualize-jumps=color --disassembler-color=extended --no-show-raw-insn $< | less -RS > $(MAKE_TERMOUT)
 lst: $(BUILD)/main.elf
-	$(DMP) -dCwz --visualize-jumps=color --disassembler-color=extended --no-show-raw-insn $< | less -RS
+	$(DMP) -dCwz --visualize-jumps=color --disassembler-color=extended --no-show-raw-insn $< | less -RS > $(MAKE_TERMOUT)
 nms: $(BUILD)/main.elf
-	$(NMS) -nC $< | less
+	$(NMS) -nC $< | less > $(MAKE_TERMOUT)
 
 diff:
 	git difftool -d
@@ -121,15 +132,12 @@ tinyusb:
 	git clone -q --depth 1 --branch $(TAG) --single-branch -c advice.detachedHead=false $(URL) $(TNY)
 	git -C $(TNY) --no-pager log -n1 --pretty=format:"%C(auto)Commit: %H %D%nAuthor: %an <%ae>%nDate:   %ad%n"
 	rm -rf ./tinyusb/*
-	mkdir -p ./tinyusb/portable/microchip/
-	cp -r $(TNY)/src/portable/microchip/samd ./tinyusb/portable/microchip/
-	cp -r $(TNY)/src/class ./tinyusb/class
-	cp -r $(TNY)/src/common ./tinyusb/common
-	cp -r $(TNY)/src/device ./tinyusb/device
-	cp -r $(TNY)/src/osal ./tinyusb/osal
-	cp $(TNY)/src/tusb_option.h $(TNY)/src/tusb.h $(TNY)/src/tusb.c ./tinyusb/
+	cp     $(TNY)/src/tusb.{h,c} $(TNY)/src/tusb_option.h ./tinyusb/
+	cp -r  $(TNY)/src/{class,common,device,osal} ./tinyusb/
+	cp     $(TNY)/src/portable/microchip/samd/dcd_samd.c ./tinyusb/device/dcd.c
 	rm -rf $(TNY)
-	awk -i inplace '/[\s]*#include/{gsub(/sam.h/,"$(MCU)/sam.h")}{print}' tinyusb/portable/microchip/samd/dcd_samd.c
+	mv ./tinyusb/device/usbd_control.c ./tinyusb/device/usbd_pvt.c
+	awk -i inplace '/[\s]*#include/{gsub(/sam.h/,"$(MCU)/sam.h")}{print}' ./tinyusb/device/dcd.c
 
 cppcheck:
 	cppcheck --check-level=exhaustive --force -Itinyusb .
@@ -152,7 +160,14 @@ stack: $(OBJS) $(LDFILE)
 	$(LINK.c) $(OBJS) $(LDLIBS) -o $(BUILD)/main.elf
 	cat $(BUILD)/main.elf.ltrans0.ltrans.su | sort > $(BUILD)/main.su
 	rm $(BUILD)/main.elf.ltrans0.ltrans.su
-	less $(BUILD)/main.su
+	less -RS $(BUILD)/main.su > $(MAKE_TERMOUT)
 
-.PHONY: remote flash size clean diff dbg lst nms version tinyusb global usb analyzer stack
-.SILENT: remote flash size clean diff dbg lst nms version tinyusb $(BUILD) $(BUILD)/main.hex $(BUILD)/main.uf2 analyzer stack
+callgraph:  CFLAGS := -fcallgraph-info=su,da $(filter-out -flto,$(CFLAGS))
+callgraph: LDFLAGS += -fcallgraph-info=su,da
+callgraph: $(OBJS) $(LDFILE)
+	$(LINK.c) $(OBJS) $(LDLIBS) -o /dev/null
+
+ctrlflow:  CFLAGS := -fdump-tree-all-graph -fdump-rtl-outof_cfglayout $(filter-out -flto,$(CFLAGS))
+ctrlflow: LDFLAGS += -fdump-tree-all-graph -fdump-rtl-outof_cfglayout
+ctrlflow: $(OBJS) $(LDFILE)
+	$(LINK.c) $(OBJS) $(LDLIBS) -o /dev/null
